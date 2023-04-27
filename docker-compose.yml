@@ -1,0 +1,8 @@
+version: '3.6'
+services:
+  chatbot:
+    build: .
+    env_file:
+      - .env
+    volumes:
+      - ./db_data:/app/db_data
