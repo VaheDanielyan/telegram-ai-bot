@@ -15,6 +15,8 @@ from dotenv import load_dotenv
 from gtts import gTTS
 from pydub import AudioSegment
 
+from integrations.openai_integration import *
+
 import database
 
 logging.basicConfig(
@@ -36,14 +38,18 @@ dp = Dispatcher(bot)
 dp.middleware.setup(LoggingMiddleware())
 
 ALLOWED_USERS = os.environ.get("BOT_ALLOWED_USERS").split(",")
-SYSTEM_PROMPT = os.environ.get("CHATGPT_SYSTEM_PROMPT")
+SYSTEM_PROMPT = os.environ.get("CHAT_DEFAULT_SYSTEM_PROMPT")
 TEMPERATURE = os.environ.get("CHATGPT_TEMPERATURE")
-MODEL = os.environ.get("OPENAI_MODEL")
-WHISPER_TO_CHAT = bool(int(os.environ.get("WHISPER_TO_CHAT")))
+MODEL = "gpt-3.5-turbo"
+MODEL_2 = "gpt-4"
+CURRENTMODEL = MODEL
+WHISPER_TO_CHAT = bool(int(os.environ.get("ASR_TO_CHAT")))
 ENABLE_GOOGLE_TTS = bool(int(os.environ.get("ENABLE_GOOGLE_TTS")))
 VOICE_LANGUAGE = os.environ.get("VOICE_LANGUAGE")
-MAX_USER_CONTEXT = int(os.environ.get("CHATGPT_MAX_USER_CONTEXT"))
+MAX_USER_CONTEXT = int(os.environ.get("CHAT_MAX_CONTEXT"))
 openai.api_key = os.environ.get("OPENAI_API_KEY")
+
+openai_integration = IntegrationOpenAI(os.environ.get("OPENAI_API_KEY"))
 
 async def getUserData(chat_id):
     user_data = database.get_user(chat_id)
@@ -137,39 +143,28 @@ def restricted(func):
     return wrapped
 
 
-async def messageGPT(text: str, chat_id: str, user_name="User", user_data={}):
+async def messageLLM(text: str, chat_id: str, user_name="User", user_data={}):
     await bot.send_chat_action(chat_id, action=types.ChatActions.TYPING)
-    user_data['context'].append({"role": "user", "content": text})
-    if len(user_data['context']) > user_data["options"]["max-context"]:
-        user_data['context'].pop(0)
-
-    try:
-        response = openai.ChatCompletion.create(
-            model=MODEL,
-            messages=[{"role": "system", "content": f"You are chatting with {user_name}. {SYSTEM_PROMPT}"}] + user_data['context'],
-            temperature=user_data["options"]["temperature"],
-        )
-    except Exception as e:
-        print(e)
-        return f"There was a problem with OpenAI, so I can't answer you: \n\n{e}"
-
-    assistant_message = response.get('choices', [{}])[0].get('message', {"content": None}).get("content", "There was a problem with OpenAI. Maybe your prompt is forbidden? They like to censor a lot!")
-
-    user_data['context'].append({"role": "assistant", "content": assistant_message})
-    if len(user_data['context']) > user_data["options"]["max-context"]:
-        user_data['context'].pop(0)
-
-    user_data["usage"]['chatgpt'] += int(response.get('usage', {"total_tokens": 0})["total_tokens"])
-
+    assistant_message = openai_integration.gptCompletion(text, SYSTEM_PROMPT, user_name, CURRENTMODEL, user_data)
     database.update_user(chat_id, user_data)
     return assistant_message, user_data
-
 
 @dp.message_handler(commands=['start'])
 @restricted
 async def start(message: types.Message):
     _ = await getUserData(message.chat.id)
     await message.reply("Hello, how can I assist you today?")
+
+@dp.message_handler(commands=['gpt3', 'gpt4'])
+@restricted
+async def swich(message: types.Message):
+    _ = await getUserData(message.chat.id)
+    model = message.text
+    if (message.text == "/gpt3"):
+        await switchModel(MODEL)
+    elif (message.text == "/gpt4"):
+        await switchModel(MODEL_2)
+    await message.reply("Switched the active model to " + CURRENTMODEL)
     
 @dp.message_handler(commands=['clear'], content_types=['text'])
 @restricted
@@ -181,6 +176,11 @@ async def clear(message: types.Message) -> None:
         database.update_user(chat_id, user_data)
         print(f"Cleared context for {message.from_user.full_name}")
     await message.reply("Your message context history was cleared.")
+
+async def switchModel(model) -> None:
+    global CURRENTMODEL
+    CURRENTMODEL = model
+    print(f"Switched Model to: " + CURRENTMODEL)
     
 @dp.message_handler(commands=['usage'])
 @restricted
@@ -211,25 +211,19 @@ Total spent: ${total_spent}"""
 
     await message.reply(info_message)
 
+@dp.message_handler(lambda message: message.chat.type == types.ChatType.PRIVATE, content_types=['text'], regexp='^/correctnumber')
+@restricted
+async def reply42(message: types.Message):
+    await message.reply("Yes, 42 is the way")
+
 @dp.message_handler(lambda message: message.chat.type == types.ChatType.PRIVATE, content_types=['text'], regexp='^/imagine')
 @restricted
 async def imagine(message: types.Message):
     await bot.send_chat_action(message.chat.id, action=types.ChatActions.TYPING)
     user_data = await getUserData(message.chat.id)
-    user_data["usage"]['dalle'] += 1
-    database.update_user(message.chat.id, user_data)
-    
-    response = openai.Image.create(
-        prompt=message.text,
-        n=1,
-        size="256x256"
-    )
-    try:
-        image_url = response['data'][0]['url']
-        await message.reply(image_url)
-    except Exception as e:
-        print(e)
-        await message.reply("Error generating. Your prompt may contain text that is not allowed by OpenAI safety system.")
+    url = openai_integration.generateImage(user_data, message.text, ImageResolution.SMALL)
+    database.update_user(str(message.chat.id), user_data)
+    await message.reply(url)
     
 @dp.message_handler(content_types=['photo', 'video', 'audio', 'voice'])
 @restricted
@@ -238,23 +232,22 @@ async def attachment(message: types.Message):
     user_data = await getUserData(chat_id)
     await bot.send_chat_action(chat_id, action=types.ChatActions.TYPING)
     
-    
     transcript = {'text': ''}
     
     audioMessage = False
     
     if message.voice:
-        user_data["usage"]['whisper'] += message.voice.duration
         file_id = message.voice.file_id
         file_format = "ogg"
         audioMessage = True
+        duration = message.voice.duration
     elif message.video:
-        user_data["usage"]['whisper'] += message.video.duration
         file_id = message.video.file_id
         file_format = "mp4"
+        duration = message.video.duration
     elif message.audio:
-        user_data["usage"]['whisper'] += message.audio.duration
         file_id = message.audio.file_id
+        duration = message.audio.duration
         file_format = "mp3"
     else:
         await message.reply("Can't handle such file. Reason: unknown.")
@@ -271,14 +264,8 @@ async def attachment(message: types.Message):
         file_format = "mp3"
 
     with open(f"{user_id}.{file_format}", "rb") as audio_file:
-        try:
-            await bot.send_chat_action(chat_id, action=types.ChatActions.TYPING)
-            transcript = openai.Audio.transcribe("whisper-1", audio_file)
-        except Exception as e:
-            print(e)
-            await message.reply("Transcript failed.")
-            os.remove(f"{user_id}.{file_format}")
-            return
+        await bot.send_chat_action(chat_id, action=types.ChatActions.TYPING)
+        transcript = openai_integration.transcribeAudio(user_data, audio_file, duration)
 
     os.remove(f"{user_id}.{file_format}")
 
@@ -287,7 +274,7 @@ async def attachment(message: types.Message):
 
     chatGPT_response = False
     if audioMessage and user_data["options"]["whisper_to_chat"]:
-        chatGPT_response, user_data = await messageGPT(transcript['text'], str(chat_id), message.from_user.full_name, user_data)
+        chatGPT_response, user_data = await messageLLM(transcript['text'], str(chat_id), message.from_user.full_name, user_data)
         transcript['text'] = "> " + transcript['text'] + "\n\n" + chatGPT_response
     
     await message.reply(transcript['text'])
@@ -345,7 +332,7 @@ async def chat(message: types.Message):
     
     user_prompt = message.text
     await bot.send_chat_action(chat_id, action=types.ChatActions.TYPING)
-    assistant_message, user_data = await messageGPT(user_prompt, chat_id, message.from_user.full_name, user_data)
+    assistant_message, user_data = await messageLLM(user_prompt, chat_id, message.from_user.full_name, user_data)
     
     await message.reply(assistant_message, parse_mode=ParseMode.MARKDOWN)
     
@@ -366,9 +353,11 @@ if __name__ == '__main__':
     print(f"Allowed users: {ALLOWED_USERS}")
     print(f"System prompt: {SYSTEM_PROMPT}")
     print(f"Google TTS: {ENABLE_GOOGLE_TTS}")
+    CURRENTMODEL = MODEL
+    print(f"Using " + MODEL)
     
     # Register message handler and callback query handler for settings
     dp.register_message_handler(settings, commands=['settings'])
     dp.register_callback_query_handler(settings_callback, lambda c: c.data.startswith('setting_'))
-    
+
     executor.start_polling(dp, skip_updates=True)
