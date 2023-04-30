@@ -1,5 +1,3 @@
-[![Please don't upload to GitHub](https://nogithub.codeberg.page/badge.svg)](https://nogithub.codeberg.page)
-
 # OpenAI API Telegram Bot
 
 A telegram bot to interact with OpenAI API. You can:
