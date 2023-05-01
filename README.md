@@ -6,13 +6,13 @@ A telegram bot to interact with AI. Currently only OpenAI API is supported
 
 - Chat with ChatGPT
     - Switch between gpt-4 to gpt-3.5-turbo with `/switch`
+- View current configuration with `/config`
 - Generate images with DALL-E: `/imagine`
 - Transcribe audio and video with Whisper: Just send a voice message or a video file!
 - Voice chat with ChatGPT:
    - Send voice message.
    - Receive voice messages.
    - Use GoogleTTS for text to voice
-
 - Clear ChatGPT context history (to save tokens).
 - Reply to any message to use it as context for ChatGPT.
 - Persistent data with sqlite database.
@@ -60,6 +60,8 @@ Self hosting this chatbot is pretty easy. You just need to follow this steps:
 - Sending a voice message to the bot, it will transcribe it to text using Whisper.
 
 - Using `/settings` you can configure a few settings.
+
+- Using `/config` you can view current configuration
 
 - Switch Between gpt3 and gpt3 with `/switch`
 
