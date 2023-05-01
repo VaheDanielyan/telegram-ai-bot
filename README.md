@@ -1,62 +1,51 @@
-# OpenAI API Telegram Bot
+# Telegram AI Bot
 
-A telegram bot to interact with OpenAI API. You can:
+A telegram bot to interact with AI. Currently only OpenAI API is supported
 
+## Features
+
+- Chat with ChatGPT
+    - Switch between gpt-4 to gpt-3.5-turbo with `/switch`
 - Generate images with DALL-E: `/imagine`
-- Chat with ChatGPT: Just chat!
-- Transcribe audio and video to text: Just send a voice message or a video file!
+- Transcribe audio and video with Whisper: Just send a voice message or a video file!
 - Voice chat with ChatGPT:
    - Send voice message.
    - Receive voice messages.
-   - Use GoogleTTS or 100% local Espeak (more robotic).
+   - Use GoogleTTS for text to voice
 
-Other features include:
-
-- Talk to ChatGPT with audio transcriptions (whisper).
 - Clear ChatGPT context history (to save tokens).
 - Reply to any message to use it as context for ChatGPT.
-- Per-user context.
-- See usage metrics and spent $.
-- Persistent data with sqlite3 database.
+- Persistent data with sqlite database.
 - Lightweight: few lines of code.
 
-[Jump to selfhosting guide](#self-hosting)
-
-![](https://rimgo.bus-hit.me/xL75hX2.png)
-![](https://rimgo.bus-hit.me/4ItDzyc.png)
-
-## Self-hosting
+## Hosting
 
 Self hosting this chatbot is pretty easy. You just need to follow this steps:
 
 1. Get your OPENAI Token from [here](https://platform.openai.com/account/api-keys).
    - You will need to set a payment method.
-
 2. Generate a new bot:
    1. Start a new chat with [@BotFather](https://t.me/BotFather) bot.
    2. Type `/newbot` command. Set a name and a username.
    3. Copy the Token that BotFather will give you.
-   
 3. Get allowed users' IDs:
    1. Start a new chat with [@RawDataBot](https://t.me/RawDataBot).
    2. Send a message or forward a message from any desired user.
    3. Copy the `message.from.id` field value. Should be an ID like: 1234567890
-
 4. Setup the bot:
    1. Clone this repo.
    2. Rename the `example.env` file to `.env`.
    3. Edit the environment variables from the `.env` file:
-      - Set your OPENAI_TOKEN.
-      - Set your BOT_TOKEN.
-      - Set your ALLOWED_USERS (comma separated user ids). Set it to `*` to allow all users.
-      - Set the SYSTEM_PROMPT for ChatGPT. This is always instructed to ChatGPT as the system.
-      - Optional: Edit the MAX_CONTEXT. This variable sets the number of messages that will be sent to ChatGPT API as context for the conversation.
-      - WHISPER_TO_CHAT allows you to choose wether Whisper transcripts should be instructed to ChatGPT or not.
+      - Set your **OPENAI_TOKEN**.
+      - Set your **BOT_TOKEN**.
+      - Set your **ALLOWED_USERS** (; separated user ids). Set it to `*` to allow all users.
+      - Set the **CHAT_DEFAULT_SYSTEM_PROMPT** for ChatGPT. This is always instructed to ChatGPT as the system.
+      - Optional: Edit the **CHAT_MAX_CONTEXT**. This variable sets the number of messages that will be sent to ChatGPT API as context for the conversation.
+      - **ASR_TO_CHAT** allows you to choose wether Whisper transcripts should be instructed to ChatGPT or not.
          - You can also configure this using `/settings` in chat.
-      - ENABLE_GOOGLE_TTS the TTS service will be provided by GoogleTTS, producing more natural voices. If disabled, it fallsback to local voice generation using Espeak.
-      - VOICE_LANGUAGE country code for the default voice accent.
+      - **ENABLE_TTS** the TTS service will be provided by GoogleTTS, producing more natural voices. If disabled, it fallsback to local voice generation using Espeak.
+      - **VOICE_LANGUAGE** country code for the default voice accent.
    4. Build and start the bot: `docker compose up --build -d`.
-   
 5. Enjoy!
 
 ## Usage
@@ -70,6 +59,8 @@ Self hosting this chatbot is pretty easy. You just need to follow this steps:
 
 - Sending a voice message to the bot, it will transcribe it to text using Whisper.
 
-- Using `/setttings` you can configure a few settings.
+- Using `/settings` you can configure a few settings.
 
-- `/info` command allows you to see your usage statistics.
+- Switch Between gpt3 and gpt3 with `/switch`
+
+- `/usage` command allows you to see your usage statistics.
