@@ -138,7 +138,7 @@ class AIBot:
                 utils.clearUserContext(chat_id)
                 print(f"Cleared context for {message.from_user.full_name}")
             await message.reply("Your message context history was cleared.")
-        elif (message.get_command() == "/switchLLM"):
+        elif (message.get_command() == "/switch"):
             if (self.config.chat_provider == "openai"):
                 if (self.currentLLM == self.config.openai_chat_models[0]):
                     self.currentLLM = self.config.openai_chat_models[1]
