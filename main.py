@@ -11,6 +11,7 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
 from aiogram.utils import executor
+from aiogram.utils import exceptions
 from dotenv import load_dotenv
 from gtts import gTTS
 from pydub import AudioSegment
@@ -281,7 +282,10 @@ async def settings_callback(callback_query: types.CallbackQuery):
         options["max-context"] = max(options["max-context"] - 1, 1)
 
     settings_markup = generate_settings_markup(chat_id)
-    await callback_query.message.edit_text(text='Choose a setting option:', reply_markup=settings_markup)
+    try:
+        await callback_query.message.edit_text(text='Choose a setting option:', reply_markup=settings_markup)
+    except exceptions.MessageNotModified as e:
+        print(e)
 
     database.update_user(chat_id, user_data)
     settings_txt = f"Updated settings:\n\nTemperature: {options['temperature']}\nWhisper to Chat: {options['whisper_to_chat']}\nAssistant voice: {options['assistant_voice_chat']}\nContext Length: {options['max-context']}"
@@ -289,6 +293,7 @@ async def settings_callback(callback_query: types.CallbackQuery):
     await callback_query.message.reply(text=settings_txt)
 
 @dp.message_handler(lambda message: message.chat.type == types.ChatType.PRIVATE and not message.text.startswith("/"), content_types=['text'])
+@restricted
 async def chat(message: types.Message):
     chat_id = str(message.chat.id)
     user_data = await getUserData(chat_id)
@@ -308,7 +313,7 @@ if __name__ == '__main__':
     database.init_database()
 
     try:
-        ALLOWED_USERS = os.environ.get("BOT_ALLOWED_USERS").split(",")
+        ALLOWED_USERS = os.environ.get("BOT_ALLOWED_USERS").split(";")
     except Exception as e:
         print(e)
         ALLOWED_USERS = ALLOWED_USERS
