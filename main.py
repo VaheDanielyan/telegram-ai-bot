@@ -16,6 +16,7 @@ from gtts import gTTS
 from pydub import AudioSegment
 
 from integrations.openai_integration import *
+from utils.text_to_voice import TextToVoice
 
 import database
 
@@ -44,12 +45,13 @@ MODEL = "gpt-3.5-turbo"
 MODEL_2 = "gpt-4"
 CURRENTMODEL = MODEL
 WHISPER_TO_CHAT = bool(int(os.environ.get("ASR_TO_CHAT")))
-ENABLE_GOOGLE_TTS = bool(int(os.environ.get("ENABLE_GOOGLE_TTS")))
+ENABLE_TTS = bool(int(os.environ.get("ENABLE_TTS")))
 VOICE_LANGUAGE = os.environ.get("VOICE_LANGUAGE")
 MAX_USER_CONTEXT = int(os.environ.get("CHAT_MAX_CONTEXT"))
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 
 openai_integration = IntegrationOpenAI(os.environ.get("OPENAI_API_KEY"))
+textToVoice = TextToVoice("en")
 
 async def getUserData(chat_id):
     user_data = database.get_user(chat_id)
@@ -88,45 +90,6 @@ def generate_settings_markup(chat_id: str) -> InlineKeyboardMarkup:
         ]
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
-
-def change_voice(engine, gender='male'):
-    for voice in engine.getProperty('voices'):
-        if VOICE_LANGUAGE in voice.languages[0].decode('utf-8') and gender == voice.gender:
-            engine.setProperty('voice', voice.id)
-            return True
-
-async def text_to_voice(text: str) -> BytesIO:
-    with tempfile.NamedTemporaryFile(mode='wb', suffix='.ogg', delete=False) as ogg_file:
-        temp_filename = ogg_file.name
-        voice_done = False
-        
-        # If Google TTS is enabled, try to use it first
-        if ENABLE_GOOGLE_TTS:
-            try:
-                tts = gTTS(text, lang=VOICE_LANGUAGE)
-                tts.save(temp_filename)
-                voice_done = True
-            except Exception as e:
-                print("Google TTS failed, falling back to pyttsx3: --> ", e)
-        
-        # If Google TTS is disabled or failed, use pyttsx3
-        if not voice_done:
-            engine = pyttsx3.init()
-            change_voice(engine)
-            engine.setProperty('rate', 160)
-            engine.save_to_file(text, temp_filename)
-            engine.runAndWait()
-            engine.stop()
-            # Add a small delay before reading the file
-            await asyncio.sleep(1)
-
-    with open(temp_filename, "rb") as audio_file:
-        voice_data = BytesIO(audio_file.read())
-
-    os.remove(temp_filename)
-    voice_data.seek(0)
-    return voice_data
-    
 
 def restricted(func):
     @wraps(func)
@@ -338,7 +301,7 @@ async def chat(message: types.Message):
     
     if user_data["options"]["assistant_voice_chat"]:
         await bot.send_chat_action(chat_id, action=types.ChatActions.TYPING)
-        voice_data = await text_to_voice(assistant_message)
+        voice_data = await textToVoice.textToVoice(assistant_message)
         await message.reply_voice(voice_data)
 
 if __name__ == '__main__':
@@ -352,7 +315,7 @@ if __name__ == '__main__':
         
     print(f"Allowed users: {ALLOWED_USERS}")
     print(f"System prompt: {SYSTEM_PROMPT}")
-    print(f"Google TTS: {ENABLE_GOOGLE_TTS}")
+    print(f"TTS: {ENABLE_TTS}")
     CURRENTMODEL = MODEL
     print(f"Using " + MODEL)
     
