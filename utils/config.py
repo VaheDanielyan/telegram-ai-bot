@@ -19,3 +19,4 @@ class Config:
         self.bot_default_tts_language = os.environ.get("VOICE_LANGUAGE")
         self.bot_access_token = os.environ.get("BOT_TOKEN")
         self.bot_allowed_users = os.environ.get("BOT_ALLOWED_USERS").split(";")
+        self.chatgpt_default_model = os.environ.get("CHATGPT_DEFAULT_MODEL")

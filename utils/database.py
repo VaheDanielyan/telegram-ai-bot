@@ -20,7 +20,8 @@ def init_database():
             assistant_voice_chat INTEGER,
             image_resolution TEXT,
             temperature REAL,
-            max_context INTEGER
+            max_context INTEGER,
+            gpt_model TEXT
         )
     """)
     print("Database initialized")
@@ -38,7 +39,8 @@ async def getUserData(chat_id, config):
                 "assistant_voice_chat": False,
                 "image_resolution": ImageResolution.MEDIUM.value,
                 "temperature": float(config.openai_gpt_default_temperature),
-                "max-context": config.chat_max_context
+                "max-context": config.chat_max_context,
+                "gpt_model": config.chatgpt_default_model
             }
         }
         add_user(chat_id, user_data)
@@ -69,7 +71,8 @@ def get_user(chat_id: str):
                 "assistant_voice_chat": bool(user[6]),
                 "image_resolution": str(user[7]),
                 "temperature": user[8],
-                "max-context": user[9]
+                "max-context": user[9],
+                "gpt_model": user[10] 
             }
         }
     return None
@@ -80,8 +83,8 @@ def add_user(chat_id: str, user_data):
     c.execute("""
         INSERT INTO users (
             chat_id, context, usage_chatgpt, usage_whisper, usage_dalle,
-            whisper_to_chat, assistant_voice_chat, image_resolution, temperature, max_context
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            whisper_to_chat, assistant_voice_chat, image_resolution, temperature, max_context, gpt_model
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         chat_id,
         json.dumps(user_data["context"]),
@@ -92,7 +95,8 @@ def add_user(chat_id: str, user_data):
         int(user_data["options"]["assistant_voice_chat"]),
         user_data["options"]["image_resolution"],
         user_data["options"]["temperature"],
-        user_data["options"]["max-context"]
+        user_data["options"]["max-context"],
+        user_data["options"]["gpt_model"]
     ))
     conn.commit()
     conn.close()
@@ -111,7 +115,8 @@ def update_user(chat_id: str, user_data):
             assistant_voice_chat = ?,
             image_resolution = ?,
             temperature = ?,
-            max_context = ?
+            max_context = ?,
+            gpt_model = ?
         WHERE chat_id = ?
     """, (
         json.dumps(user_data["context"]),
@@ -123,6 +128,7 @@ def update_user(chat_id: str, user_data):
         user_data["options"]["image_resolution"],
         user_data["options"]["temperature"],
         user_data["options"]["max-context"],
+        user_data["options"]["gpt_model"],
         chat_id
     ))
     conn.commit()

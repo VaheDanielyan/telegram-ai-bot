@@ -123,7 +123,7 @@ class AIBot:
         await self.bot.send_chat_action(chat_id, action=types.ChatActions.TYPING)
         if (self.config.chat_provider == "openai"):
             assistant_message = self.openai_integration.gptCompletion(text, self.config.chat_default_system_prompt,
-                                                                      user_name, self.currentLLM, user_data)
+                                                                      user_name, user_data["options"]["gpt_model"], user_data)
         database.update_user(chat_id, user_data)
         return assistant_message, user_data
 
@@ -140,12 +140,18 @@ class AIBot:
             await message.reply("Your message context history was cleared.")
         elif (message.get_command() == "/switch"):
             if (self.config.chat_provider == "openai"):
-                if (self.currentLLM == self.config.openai_chat_models[0]):
-                    self.currentLLM = self.config.openai_chat_models[1]
-                elif (self.currentLLM == self.config.openai_chat_models[1]):
-                    self.currentLLM = self.config.openai_chat_models[0]
-            await message.reply(f"Switched model to {self.currentLLM}")
-            print(f"Using {self.currentLLM}")
+                if (user_data["options"]["gpt_model"] == self.config.openai_chat_models[0]):
+                    user_data["options"]["gpt_model"] = self.config.openai_chat_models[1]
+                elif (user_data["options"]["gpt_model"] == self.config.openai_chat_models[1]):
+                    user_data["options"]["gpt_model"] = self.config.openai_chat_models[0]
+            model = user_data["options"]["gpt_model"]
+            await message.reply(f"Switched model to {model}")
+            database.update_user(chat_id, user_data)
+            print(f"Using {model}:")
+            database.update_user(chat_id, user_data)
+        elif (message.get_command() == "/config"):
+            status = utils.getSettingsReport(user_data["options"])
+            await message.reply(status)
         elif (message.get_command() == "/settings"):
             self.settingsMarkup = utils.generateInlineKeyboard(chat_id)
             await message.reply(text='Settings:', reply_markup=self.settingsMarkup)

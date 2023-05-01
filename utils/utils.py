@@ -28,12 +28,13 @@ def generateInlineKeyboard(chat_id) -> InlineKeyboardMarkup:
 
 def getSettingsReport(options):
     header = "Updated settings:\n\n"
+    gptModel = f"GPT-Model: {options['gpt_model']}\n"
     imageResolution = f"Image Resolution: {options['image_resolution']}\n"
     gptTemperature = f"Temperature: {options['temperature']}\n"
     whisperStatus = f"Whisper to Chat: {options['whisper_to_chat']}\n"
     assistantVoice = f"Assistant voice: {options['assistant_voice_chat']}\n" 
     contextLength = f"Context Length: {options['max-context']}"
-    fullReport = header + imageResolution + gptTemperature + whisperStatus + assistantVoice + contextLength
+    fullReport = header + gptModel + imageResolution + gptTemperature + whisperStatus + assistantVoice + contextLength
     return fullReport
 
 def getUsageReport(user_data):
