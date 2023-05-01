@@ -4,8 +4,12 @@ RUN apt update && apt install -y ffmpeg libespeak1
 WORKDIR /app
 
 COPY ./main.py /app
-COPY ./database.py /app
+COPY ./utils/ /app/utils
+COPY ./integrations/ /app/integrations
+COPY ./app/ /app/app
 COPY ./requirements.txt /app
+
+RUN ls /app
 
 RUN mkdir db_data
 

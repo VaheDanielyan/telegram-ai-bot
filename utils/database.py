@@ -2,6 +2,8 @@ import sqlite3
 import json
 import asyncio
 
+from integrations.openai_integration import ImageResolution
+
 DB_PATH = "db_data/users.db"
 
 def init_database():
@@ -25,18 +27,18 @@ def init_database():
     conn.commit()
     conn.close()
     
-async def getUserData(chat_id):
+async def getUserData(chat_id, config):
     user_data = get_user(chat_id)
     if not user_data:
         user_data = {
             "context": [],
             "usage": {"chatgpt": 0, "whisper": 0, "dalle": 0},
             "options": {
-                "whisper_to_chat": self.config.bot_asr_to_chat,
+                "whisper_to_chat": config.bot_asr_to_chat,
                 "assistant_voice_chat": False,
                 "image_resolution": ImageResolution.MEDIUM.value,
-                "temperature": float(self.config.openai_gpt_default_temperature),
-                "max-context": self.config.chat_max_context
+                "temperature": float(config.openai_gpt_default_temperature),
+                "max-context": config.chat_max_context
             }
         }
         add_user(chat_id, user_data)

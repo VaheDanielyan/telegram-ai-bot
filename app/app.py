@@ -50,7 +50,7 @@ class AIBot:
             await self.handleCommand(message)
         elif (message.chat.type == types.ChatType.PRIVATE and not message.text.startswith("/")):
             chat_id = str(message.chat.id)
-            user_data = await database.getUserData(chat_id)
+            user_data = await database.getUserData(chat_id, self.config)
             
             user_prompt = message.text
             await self.bot.send_chat_action(chat_id, action=types.ChatActions.TYPING)
@@ -65,7 +65,7 @@ class AIBot:
 
     async def handleAttachment(self, message: types.Message):
         chat_id = message.chat.id
-        user_data = await database.getUserData(chat_id)
+        user_data = await database.getUserData(chat_id, self.config)
         await self.bot.send_chat_action(chat_id, action=types.ChatActions.TYPING)
         transcript = {'text': ''}
         audioMessage = False
@@ -130,7 +130,7 @@ class AIBot:
 
     async def handleCommand(self, message: types.Message):
         chat_id = str(message.chat.id)
-        user_data = await database.getUserData(chat_id)
+        user_data = await database.getUserData(chat_id, self.config)
         if (message.get_command() == "/start"):
             await message.reply("Hello, how can I assist you today?")
         elif (message.get_command() == "/clear"):
@@ -160,7 +160,7 @@ class AIBot:
             await message.reply(usage)
 
     async def settingsCallback(self, callback_query: types.CallbackQuery):
-        user_data = await database.getUserData(callback_query.message.chat.id)
+        user_data = await database.getUserData(callback_query.message.chat.id, self.config)
         chat_id = callback_query.message.chat.id
         action = callback_query.data
         options = user_data["options"]
