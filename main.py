@@ -154,24 +154,15 @@ async def usage(message: types.Message) -> None:
     user_usage = user_data["usage"]
     total_usage = database.get_total_usage()
 
-    user_spent = round((((user_usage['chatgpt'] / 750) * 0.002) + (float(user_usage['dalle']) * 0.02) + ((user_usage['whisper'] / 60.0) * 0.006)), 4)
-    total_spent = round((((total_usage['chatgpt'] / 750) * 0.002) + (float(total_usage['dalle']) * 0.02) + ((total_usage['whisper'] / 60.0) * 0.006)), 4)
-
-    user_percentage = (user_spent / total_spent) * 100 if total_spent > 0 else 0
-
     info_message = f"""User: {message.from_user.full_name}
 - Used ~{user_usage["chatgpt"]} tokens with ChatGPT.
 - Generated {user_usage["dalle"]} images with DALL-E.
 - Transcribed {round(float(user_usage["whisper"]) / 60.0, 2)}min with Whisper.
 
-Total spent: ${user_spent} ({user_percentage:.2f}% of total)
-
 Total usage:
 - ChatGPT tokens: {total_usage["chatgpt"]}
 - DALL-E images: {total_usage["dalle"]}
-- Whisper transcription: {round(float(total_usage["whisper"]) / 60.0, 2)}min
-
-Total spent: ${total_spent}"""
+- Whisper transcription: {round(float(total_usage["whisper"]) / 60.0, 2)}min"""
 
     await message.reply(info_message)
 
