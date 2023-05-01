@@ -15,7 +15,6 @@ class TextToVoice:
         with tempfile.NamedTemporaryFile(mode='wb', suffix='.ogg', delete=False) as ogg_file:
             temp_filename = ogg_file.name
         gttsSuccess = False
-
         try:
             tts = gTTS(text, lang=self.voiceLanguage)
             tts.save(temp_filename)
@@ -26,7 +25,6 @@ class TextToVoice:
         # If Google TTS is disabled or failed, use pyttsx3
         if not gttsSuccess:
             engine = pyttsx3.init()
-            change_voice(engine)
             engine.setProperty('rate', 160)
             engine.save_to_file(text, temp_filename)
             for voice in engine.getProperty('voices'):
