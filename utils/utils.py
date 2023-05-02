@@ -39,14 +39,8 @@ def getSettingsReport(options):
 
 def getUsageReport(user_data):
     user_usage = user_data["usage"]
-    total_usage = database.get_total_usage()
-    info_message = f"""User: {message.from_user.full_name}
-        - Used ~{user_usage["chatgpt"]} tokens with ChatGPT.
-        - Generated {user_usage["dalle"]} images with DALL-E.
-        - Transcribed {round(float(user_usage["whisper"]) / 60.0, 2)}min with Whisper.
-
-        Total usage:
-        - ChatGPT tokens: {total_usage["chatgpt"]}
-        - DALL-E images: {total_usage["dalle"]}
-        - Whisper transcription: {round(float(total_usage["whisper"]) / 60.0, 2)}min"""
+    chatUsage = f"""- Used ~{user_usage["chatgpt"]} tokens with ChatGPT.\n"""
+    imageUsage = f"""- Generated {user_usage["dalle"]} images with DALL-E.\n"""
+    whisperUsage = f"""- Transcribed {round(float(user_usage["whisper"]) / 60.0, 2)}min with Whisper."""
+    info_message = chatUsage + imageUsage + whisperUsage
     return info_message
