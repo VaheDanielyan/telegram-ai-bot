@@ -17,6 +17,7 @@ from aiogram.utils import exceptions
 from integrations.openai_integration import *
 from utils.config import Config
 from utils.text_to_voice import TextToVoice
+from utils.utils import getHelpReport
 
 from utils import utils
 
@@ -166,7 +167,7 @@ class AIBot:
             await message.reply(usage)
         elif (message.get_command() == "/help"):
             help_msg = getHelpReport()
-            await meesage.reply(help_msg)
+            await message.reply(help_msg)
 
     async def settingsCallback(self, callback_query: types.CallbackQuery):
         user_data = await database.getUserData(callback_query.message.chat.id, self.config)
