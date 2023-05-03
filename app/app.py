@@ -164,6 +164,9 @@ class AIBot:
         elif (message.get_command() == "/usage"):
             usage = utils.getUsageReport(user_data)
             await message.reply(usage)
+        elif (message.get_command() == "/help"):
+            help_msg = getHelpReport()
+            await meesage.reply(help_msg)
 
     async def settingsCallback(self, callback_query: types.CallbackQuery):
         user_data = await database.getUserData(callback_query.message.chat.id, self.config)
