@@ -44,3 +44,14 @@ def getUsageReport(user_data):
     whisperUsage = f"""- Transcribed {round(float(user_usage["whisper"]) / 60.0, 2)}min with Whisper."""
     info_message = chatUsage + imageUsage + whisperUsage
     return info_message
+
+def getHelpReport():
+    header          = "Commands: \n\n"
+    clearContext    = "/clear            - Clear the context.\n"
+    dalle           = "/imagine <prompt> - Generate image with Dall-E.\n"
+    settings        = "/settings         - Open config menu.\n"
+    config          = "/config           - View current configuration.\n"
+    switch          = "/switch           - Switch between language models.\n"
+    usage           = "/usage            - See usage statistics.\n"
+    help_message = header + clearContext + dallE + settings + config + switch + usage
+    return help_message
