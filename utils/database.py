@@ -27,7 +27,13 @@ def init_database():
     print("Database initialized")
     conn.commit()
     conn.close()
-    
+
+def clearUserContext(chat_id, user_data):
+    if (user_data):
+        user_data["context"] = []
+        update_user(chat_id, user_data)
+    return
+
 async def getUserData(chat_id, config):
     user_data = get_user(chat_id)
     if not user_data:
@@ -46,11 +52,6 @@ async def getUserData(chat_id, config):
         add_user(chat_id, user_data)
         user_data = get_user(chat_id)
     return user_data
-
-def clearUserContext(chat_id):
-    user_data = getUserData(chat_id)
-    user_data["context"] = []
-    update_user(chat_id, user_data)
 
 def get_user(chat_id: str):
     conn = sqlite3.connect(DB_PATH)
