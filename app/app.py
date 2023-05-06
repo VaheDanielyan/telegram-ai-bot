@@ -136,7 +136,7 @@ class AIBot:
             await message.reply("Hello, how can I assist you today?")
         elif (message.get_command() == "/clear"):
             if user_data:
-                utils.clearUserContext(chat_id)
+                database.clearUserContext(chat_id, user_data)
                 print(f"Cleared context for {message.from_user.full_name}")
             await message.reply("Your message context history was cleared.")
         elif (message.get_command() == "/switch"):
